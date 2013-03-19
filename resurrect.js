@@ -19,6 +19,8 @@
 function Resurrect() {
 }
 
+Resurrect.prototype.prefix = '#';
+
 /* Error Objects */
 
 /**
@@ -60,6 +62,17 @@ Resurrect.isObject = function(object) {
         !Resurrect.isFunction(object);
 };
 
+/* Helper Functions */
+
+Resurrect.makeId = function() {
+    return Math.floor(Math.random() * Math.pow(2, 32)).toString(16);
+};
+
+/* Methods */
+
+/**
+ * @method
+ */
 Resurrect.prototype.decorate = function(object) {
     if (object === null) {
         return null;
@@ -79,7 +92,7 @@ Resurrect.prototype.decorate = function(object) {
     } else if (Resurrect.isFunction(object)) {
         throw new this.Error("Can't serialize functions.");
     } else {
-        if (!('#' in object)) {
+        if (!(this.prefix in object)) {
             var constructor = object.constructor.name;
             if (constructor === '') {
                 throw new this.Error("Can't serialize objects with " +
@@ -88,7 +101,7 @@ Resurrect.prototype.decorate = function(object) {
                 if (window[constructor].prototype !== object.__proto__) {
                     throw new this.Error('Constructor mismatch!');
                 } else {
-                    object['#'] = constructor;
+                    object[this.prefix] = constructor;
                 }
             }
         }
@@ -101,14 +114,17 @@ Resurrect.prototype.decorate = function(object) {
     }
 };
 
+/**
+ * @method
+ */
 Resurrect.prototype.fixPrototype = function(object) {
     var isObject = Resurrect.isObject(object);
-    if (isObject && object['#']) {
-        var constructor = window[object['#']];
+    if (isObject && object[this.prefix]) {
+        var constructor = window[object[this.prefix]];
         if (constructor) {
             object.__proto__ = constructor.prototype;
         } else {
-            throw new this.Error('Unknown constructor ' + object['#']);
+            throw new this.Error('Unknown constructor ' + object[this.prefix]);
         }
     }
     if (isObject || Resurrect.isArray(object)) {
@@ -121,10 +137,16 @@ Resurrect.prototype.fixPrototype = function(object) {
     return object;
 };
 
+/**
+ * @method
+ */
 Resurrect.prototype.stringify = function(object) {
     return JSON.stringify(this.decorate(object));
 };
 
+/**
+ * @method
+ */
 Resurrect.prototype.resurrect = function(string) {
     return this.fixPrototype(JSON.parse(string));
 };
