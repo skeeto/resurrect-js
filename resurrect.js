@@ -17,8 +17,7 @@
  * @constructor
  */
 function Resurrect(options) {
-    this.db = {'0': undefined};
-    this.counter = 1;
+    this.table = null;
     this.prefix = '#';
     for (var option in options) {
         if (options.hasOwnProperty(option)) {
@@ -31,18 +30,6 @@ function Resurrect(options) {
 }
 
 /* Helper Objects */
-
-/**
- * @constructor
- */
-Resurrect.Ref = function Ref(resurrect, id) {
-    this[resurrect.refcode] = id;
-    this[resurrect.prefix] = resurrect.prefix;
-};
-
-Resurrect.Ref.prototype.deref = function(resurrect) {
-    return resurrect.db[this[resurrect.refcode]];
-};
 
 /**
  * @constructor
@@ -83,163 +70,127 @@ Resurrect.isObject = function(object) {
         !Resurrect.isFunction(object);
 };
 
-/* Methods */
-
-/**
- * @method
- */
-Resurrect.prototype.makeId = function() {
-    return (this.counter++).toString(36);
+Resurrect.isAtom = function(object) {
+    return object === null || object === undefined ||
+        Resurrect.isBoolean(object) || Resurrect.isString(object) ||
+        Resurrect.isNumber(object) || Resurrect.isFunction(object);
 };
+
+/* Methods */
 
 /**
  * Create a reference to an object.
  * @method
  */
 Resurrect.prototype.ref = function(object) {
+    var ref = {};
     if (object === undefined) {
-        return new Resurrect.Ref(this, '0');
+        ref[this.prefix] = 0;
     } else {
-        return new Resurrect.Ref(this, object[this.refcode]);;
+        ref[this.prefix] = object[this.refcode];
     }
+    return ref;
 };
 
 /**
  * @method
  */
 Resurrect.prototype.deref = function(ref) {
-    return this.db[ref[this.refcode]] || 'unknown';
+    return this.table[ref[this.prefix]];
 };
 
-/**
- * Register an object in the database, returning a reference to the
- * object if already registered.
- * @method
- */
-Resurrect.prototype.register = function(object) {
-    if (!(this.refcode in object)) {
-        object[this.refcode] = this.makeId();
-    }
-    var id = object[this.refcode];
-    if (!(id in this.db)) {
-        this.db[id] = object;
-        for (var k in object) {
-            if (object.hasOwnProperty(k) && Resurrect.isObject(object[k])) {
-                this.register(object[k]);
-            }
-        }
-        if (Resurrect.isArray(object)) {
-            var wrap = {};
-            wrap[this.prefix] = object;
-            wrap[this.refcode] = object[this.refcode];
-            return wrap;
+Resurrect.prototype.tag = function(object) {
+    var constructor = object.constructor.name;
+    if (constructor === '') {
+        throw new this.Error("Can't serialize with anonymous constructors.");
+    } else if (constructor !== 'Object') {
+        if (window[constructor].prototype !== Object.getPrototypeOf(object)) {
+            throw new this.Error('Constructor mismatch!');
         } else {
-            return object;
+            object[this.prefix] = constructor;
         }
-    } else {
-        return this.ref(object);
     }
+    object[this.refcode] = this.table.length;
+    this.table.push(object);
+    return object[this.refcode];
 };
 
-/**
- * @method
- */
-Resurrect.prototype.isRegistered = function(object) {
-    return object[this.refcode] in this.db;
+Resurrect.prototype.isTagged = function(object) {
+    return (this.refcode in object);
 };
 
-/**
- * @method
- */
-Resurrect.prototype.decorate = function(object) {
-    if (object === null) {
-        return null;
-    } else if (object === undefined) {
-        return this.ref(undefined);
-    } else if (Resurrect.isString(object)) {
-        return String(object);
-    } else if (Resurrect.isNumber(object)) {
-        return Number(object);
-    } else if (Resurrect.isBoolean(object)) {
-        return Boolean(object);
-    } else if (Resurrect.isFunction(object)) {
-        throw new this.Error("Can't serialize functions.");
-    } else if (Resurrect.isArray(object)) {
-        if (this.isRegistered(object)) {
-            return this.ref(object);
-        } else {
-            var wrapped = this.register(object);
-            for (var i = 0; i < object.length; i++) {
-                object[i] = this.decorate(object[i]);
+Resurrect.prototype.visit = function(root, f) {
+    if (Resurrect.isAtom(root)) {
+        return f(root);
+    } else if (!this.isTagged(root)) {
+        var copy = null;
+        if (Resurrect.isArray(root)) {
+            copy = [];
+            root[this.refcode] = this.tag(copy);
+            for (var i = 0; i < root.length; i++) {
+                copy.push(this.visit(root[i], f));
             }
-        }
-        return wrapped;
-    } else { /* This must be an object. */
-        if (!(this.prefix in object)) {
-            var constructor = object.constructor.name;
-            if (constructor === '') {
-                throw new this.Error("Can't serialize objects with " +
-                                     "anonymous constructors.");
-            } else if (constructor !== 'Object') {
-                if (window[constructor].prototype !== object.__proto__) {
-                    throw new this.Error('Constructor mismatch!');
-                } else {
-                    object[this.prefix] = constructor;
+        } else { /* Object */
+            copy = Object.create(Object.getPrototypeOf(root));
+            root[this.refcode] = this.tag(copy);
+            for (var key in root) {
+                if (root.hasOwnProperty(key)) {
+                    copy[key] = this.visit(root[key], f);
                 }
             }
         }
-        object = this.register(object);
-        for (var k in object) {
-            if (object.hasOwnProperty(k)) {
-                object[k] = this.decorate(object[k]);
-            }
-        }
-        return object;
+        return this.ref(copy);
+    } else {
+        return this.ref(root);
     }
-};
-
-/**
- * @method
- */
-Resurrect.prototype.fixup = function(object) {
-    var isObject = Resurrect.isObject(object);
-    if (isObject && object[this.prefix]) {
-        var name = object[this.prefix];
-        if (name === this.prefix) {             /* Reference */
-            return this.deref(object);
-        } else if (Resurrect.isArray(name)) {   /* Array */
-            var id = object[this.refcode];
-            object = name;
-            object[this.refcode] = id;
-        } else {                                /* Object */
-            var constructor = window[name];
-            if (constructor) {
-                object.__proto__ = constructor.prototype;
-            } else {
-                throw new this.Error('Unknown constructor ' + name);
-            }
-        }
-    }
-    if (isObject || Resurrect.isArray(object)) {
-        for (var k in object) {
-            if (object.hasOwnProperty(k)) {
-                object[k] = this.fixup(object[k]);
-            }
-        }
-    }
-    return object;
 };
 
 /**
  * @method
  */
 Resurrect.prototype.stringify = function(object) {
-    return JSON.stringify(this.decorate(object));
+    this.table = [0];
+    this.visit(object, function(atom) {
+        if (Resurrect.isFunction(atom)) {
+            throw new this.Error("Can't serialize functions.");
+        } else if (atom === undefined) {
+            return this.ref(undefined);
+        } else {
+            return atom;
+        }
+    });
+    for (var i = 0; i < this.table.length; i++) {
+        delete this.table[i][this.refcode];
+    }
+    var table = this.table;
+    this.table = null;
+    return JSON.stringify(table);
 };
 
 /**
  * @method
  */
 Resurrect.prototype.resurrect = function(string) {
-    return this.fixup(JSON.parse(string));
+    this.table = JSON.parse(string);
+    this.table[0] = undefined;
+    for (var i = 1; i < this.table.length; i++) {
+        var object = this.table[i];
+        for (var key in object) {
+            if (object.hasOwnProperty(key)) {
+                if (!(Resurrect.isAtom(object[key]))) {
+                    object[key] = this.deref(object[key]);
+                }
+            }
+        }
+        if (this.prefix in object) {
+            var name = object[this.prefix];
+            var constructor = window[name];
+            if (constructor) {
+                object.__proto__ = constructor.prototype;
+            } else {
+                throw new this.Error('Unknown constructor: ' + name);
+            }
+        }
+    }
+    return this.table[1];
 };
