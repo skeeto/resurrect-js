@@ -19,14 +19,14 @@
 function Resurrect(options) {
     this.table = null;
     this.prefix = '#';
+    this.cleanup = false;
     for (var option in options) {
         if (options.hasOwnProperty(option)) {
             this[option] = options[option];
         }
     }
-    if (!('refcode' in this)) {
-        this.refcode = this.prefix + '@';
-    }
+    this.refcode = this.prefix + 'id';
+    this.origcode = this.prefix + 'original';
 }
 
 /* Helper Objects */
@@ -85,7 +85,7 @@ Resurrect.isAtom = function(object) {
 Resurrect.prototype.ref = function(object) {
     var ref = {};
     if (object === undefined) {
-        ref[this.prefix] = 0;
+        ref[this.prefix] = -1;
     } else {
         ref[this.prefix] = object[this.refcode];
     }
@@ -116,7 +116,7 @@ Resurrect.prototype.tag = function(object) {
 };
 
 Resurrect.prototype.isTagged = function(object) {
-    return (this.refcode in object);
+    return (this.refcode in object) && (object[this.refcode] != null);
 };
 
 Resurrect.prototype.visit = function(root, f) {
@@ -139,6 +139,7 @@ Resurrect.prototype.visit = function(root, f) {
                 }
             }
         }
+        copy[this.origcode] = root;
         return this.ref(copy);
     } else {
         return this.ref(root);
@@ -149,7 +150,7 @@ Resurrect.prototype.visit = function(root, f) {
  * @method
  */
 Resurrect.prototype.stringify = function(object) {
-    this.table = [0];
+    this.table = [];
     this.visit(object, function(atom) {
         if (Resurrect.isFunction(atom)) {
             throw new this.Error("Can't serialize functions.");
@@ -160,7 +161,13 @@ Resurrect.prototype.stringify = function(object) {
         }
     });
     for (var i = 0; i < this.table.length; i++) {
+        if (this.cleanup) {
+            delete this.table[i][this.origcode][this.refcode];
+        } else {
+            this.table[i][this.origcode][this.refcode] = null;
+        }
         delete this.table[i][this.refcode];
+        delete this.table[i][this.origcode];
     }
     var table = this.table;
     this.table = null;
@@ -172,8 +179,7 @@ Resurrect.prototype.stringify = function(object) {
  */
 Resurrect.prototype.resurrect = function(string) {
     this.table = JSON.parse(string);
-    this.table[0] = undefined;
-    for (var i = 1; i < this.table.length; i++) {
+    for (var i = 0; i < this.table.length; i++) {
         var object = this.table[i];
         for (var key in object) {
             if (object.hasOwnProperty(key)) {
@@ -190,7 +196,10 @@ Resurrect.prototype.resurrect = function(string) {
             } else {
                 throw new this.Error('Unknown constructor: ' + name);
             }
+            if (this.cleanup) {
+                delete object[this.prefix];
+            }
         }
     }
-    return this.table[1];
+    return this.table[0];
 };
