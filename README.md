@@ -2,7 +2,7 @@
 
 ResurrectJS preserves object behavior (prototypes) and reference
 circularity with a special JSON encoding. Unlike regular JSON, Date
-objects and undefined are also properly preserved.
+objects and `undefined` are also properly preserved.
 
 ## Examples
 
