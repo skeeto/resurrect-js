@@ -50,6 +50,11 @@ properties:
      serialization, resurrection information will not be encoded. You
      still get circularity and Date support.
 
+ * *resolver* (Resurrect.GlobalResolver): Converts between a name and
+     a prototype. Create a custom resolver if your constructors are
+     not stored in global variables. The resolver has two methods:
+     getName(object) and getPrototype(string).
+
 For example,
 
 ```javascript
@@ -61,9 +66,9 @@ var necromancer = new Resurrect({
 
 ## Restrictions
 
-All constructors must be named and stored in the global variable under
-that name. This is required so that the prototypes can be looked up
-and reconnected at resurrection time.
+With the default resolver, all constructors must be named and stored
+in the global variable under that name. This is required so that the
+prototypes can be looked up and reconnected at resurrection time.
 
 The wrapper objects Boolean, String, and Number will be
 unwrapped. This means extra properties added to these objects will not

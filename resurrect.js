@@ -49,6 +49,11 @@
  *     resurrection information will not be encoded. You still get
  *     circularity and Date support.
  *
+ *   resolver (Resurrect.GlobalResolver): Converts between a name and
+ *     a prototype. Create a custom resolver if your constructors are
+ *     not stored in global variables. The resolver has two methods:
+ *     getName(object) and getPrototype(string).
+ *
  * For example,
  *
  * var necromancer = new Resurrect({
@@ -58,12 +63,14 @@
  *
  * ## Caveats
  *
- *   * All constructors must be named and stored in the global
- * variable under that name.
+ *   * With the default resolver, all constructors must be named and
+ *   stored in the global variable under that name. This is required
+ *   so that the prototypes can be looked up and reconnected at
+ *   resurrection time.
  *
  *   * The wrapper objects Boolean, String, and Number will be
- * unwrapped. This means extra properties added to these objects will
- * not be preserved.
+ *   unwrapped. This means extra properties added to these objects
+ *   will not be preserved.
  */
 
 /**
@@ -97,6 +104,48 @@ Resurrect.prototype.Error = function ResurrectError(message) {
 };
 Resurrect.prototype.Error.prototype = Object.create(Error.prototype);
 Resurrect.prototype.Error.prototype.name = 'ResurrectError';
+
+/**
+ * Resolves prototypes through global variables and constructor names.
+ * @constructor
+ */
+Resurrect.GlobalResolver = function() {};
+
+/**
+ * Gets the prototype of the given name from the global namespace. If
+ * not found, it throws an error.
+ * @param {string} name
+ * @method
+ */
+Resurrect.GlobalResolver.prototype.getPrototype = function(name) {
+    var constructor = window[name];
+    if (constructor) {
+        return constructor.prototype;
+    } else {
+        throw new Resurrect.prototype.Error('Unknown constructor: ' + name);
+    }
+};
+
+/**
+ * Get the prototype name for an object, to be fetched later with
+ * getPrototype.
+ * @returns {string} Null if the constructor is Object.
+ * @method
+ */
+Resurrect.GlobalResolver.prototype.getName = function(object) {
+    var constructor = object.constructor.name;
+    if (constructor === '') {
+        var msg = "Can't serialize objects with anonymous constructors.";
+        throw new Resurrect.prototype.Error(msg);
+    } else if (constructor === 'Object') {
+        return null;
+    } else {
+        return constructor;
+    }
+};
+
+/* Set the default resolver. */
+Resurrect.prototype.resolver = new Resurrect.GlobalResolver();
 
 /* Type Tests */
 
@@ -169,13 +218,10 @@ Resurrect.prototype.deref = function(ref) {
  */
 Resurrect.prototype.tag = function(object) {
     if (this.revive) {
-        var constructor = object.constructor.name;
-        if (constructor === '') {
-            throw new this.Error("Can't serialize objects with anonymous " +
-                                 "constructors.");
-        } else if (constructor !== 'Object') {
+        var constructor = this.resolver.getName(object);
+        if (constructor) {
             var proto = Object.getPrototypeOf(object);
-            if (window[constructor].prototype !== proto) {
+            if (this.resolver.getPrototype(constructor) !== proto) {
                 throw new this.Error('Constructor mismatch!');
             } else {
                 object[this.prefix] = constructor;
@@ -311,12 +357,8 @@ Resurrect.prototype.stringify = function(object) {
 Resurrect.prototype.fixPrototype = function(object) {
     if (this.prefix in object) {
         var name = object[this.prefix];
-        var constructor = window[name];
-        if (constructor) {
-            object.__proto__ = constructor.prototype;
-        } else {
-            throw new this.Error('Unknown constructor: ' + name);
-        }
+        var constructor = this.resolver.getPrototype(name);
+        object.__proto__ = this.resolver.getPrototype(name);
         if (this.cleanup) {
             delete object[this.prefix];
         }
