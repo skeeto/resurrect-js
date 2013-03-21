@@ -151,23 +151,27 @@ Resurrect.prototype.visit = function(root, f) {
  */
 Resurrect.prototype.stringify = function(object) {
     this.table = [];
-    this.visit(object, function(atom) {
-        if (Resurrect.isFunction(atom)) {
-            throw new this.Error("Can't serialize functions.");
-        } else if (atom === undefined) {
-            return this.ref(undefined);
-        } else {
-            return atom;
+    if (Resurrect.isAtom(object)) {
+        this.table.push(object);
+    } else {
+        this.visit(object, function(atom) {
+            if (Resurrect.isFunction(atom)) {
+                throw new this.Error("Can't serialize functions.");
+            } else if (atom === undefined) {
+                return this.ref(undefined);
+            } else {
+                return atom;
+            }
+        }.bind(this));
+        for (var i = 0; i < this.table.length; i++) {
+            if (this.cleanup) {
+                delete this.table[i][this.origcode][this.refcode];
+            } else {
+                this.table[i][this.origcode][this.refcode] = null;
+            }
+            delete this.table[i][this.refcode];
+            delete this.table[i][this.origcode];
         }
-    });
-    for (var i = 0; i < this.table.length; i++) {
-        if (this.cleanup) {
-            delete this.table[i][this.origcode][this.refcode];
-        } else {
-            this.table[i][this.origcode][this.refcode] = null;
-        }
-        delete this.table[i][this.refcode];
-        delete this.table[i][this.origcode];
     }
     var table = this.table;
     this.table = null;
@@ -181,25 +185,29 @@ Resurrect.prototype.resurrect = function(string) {
     this.table = JSON.parse(string);
     for (var i = 0; i < this.table.length; i++) {
         var object = this.table[i];
-        for (var key in object) {
-            if (object.hasOwnProperty(key)) {
-                if (!(Resurrect.isAtom(object[key]))) {
-                    object[key] = this.deref(object[key]);
+        if (!Resurrect.isAtom(object)) {
+            for (var key in object) {
+                if (object.hasOwnProperty(key)) {
+                    if (!(Resurrect.isAtom(object[key]))) {
+                        object[key] = this.deref(object[key]);
+                    }
+                }
+            }
+            if (this.prefix in object) {
+                var name = object[this.prefix];
+                var constructor = window[name];
+                if (constructor) {
+                    object.__proto__ = constructor.prototype;
+                } else {
+                    throw new this.Error('Unknown constructor: ' + name);
+                }
+                if (this.cleanup) {
+                    delete object[this.prefix];
                 }
             }
         }
-        if (this.prefix in object) {
-            var name = object[this.prefix];
-            var constructor = window[name];
-            if (constructor) {
-                object.__proto__ = constructor.prototype;
-            } else {
-                throw new this.Error('Unknown constructor: ' + name);
-            }
-            if (this.cleanup) {
-                delete object[this.prefix];
-            }
-        }
     }
-    return this.table[0];
+    var result = this.table[0];
+    this.table = null;
+    return result;
 };
