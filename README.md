@@ -40,9 +40,10 @@ properties:
      and deserialization.
 
  * *cleanup* (`false`): Perform full property cleanup after both
-     serialization and deserialization using the delete operator. This
-     may cause performance penalties (breaking hidden classes in V8)
-     on objects that ResurrectJS touches, to enable with care.
+     serialization and deserialization using the `delete` operator.
+     This may cause performance penalties (i.e. breaking hidden
+     classes in V8) on objects that ResurrectJS touches, so enable
+     with care.
 
  * *revive* (`true`): Restore behavior (`__proto__`) to objects that
      have been resurrected. If this is set to false during

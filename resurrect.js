@@ -3,7 +3,7 @@
  *
  * ResurrectJS preserves object behavior (prototypes) and reference
  * circularity with a special JSON encoding. Unlike regular JSON, Date
- * objects and undefined are also properly preserved.
+ * objects and `undefined` are also properly preserved.
  *
  * ## Examples
  *
@@ -39,9 +39,9 @@
  *     serialization and deserialization.
  *
  *   cleanup (false): Perform full property cleanup after both
- *     serialization and deserialization using the delete
+ *     serialization and deserialization using the `delete`
  *     operator. This may cause performance penalties (breaking hidden
- *     classes in V8) on objects that ResurrectJS touches, to enable
+ *     classes in V8) on objects that ResurrectJS touches, so enable
  *     with care.
  *
  *   revive (true): Restore behavior (__proto__) to objects that have
