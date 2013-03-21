@@ -1,4 +1,6 @@
 /**
+ * # ResurrectJS
+ *
  * ResurrectJS preserves object behavior (prototypes) and reference
  * circularity with a special JSON encoding. Unlike regular JSON, Date
  * objects and undefined are also properly preserved.
@@ -46,6 +48,13 @@
  *     been resurrected. If this is set to false during serialization,
  *     resurrection information will not be encoded. You still get
  *     circularity and Date support.
+ *
+ * For example,
+ *
+ * var necromancer = new Resurrect({
+ *     prefix: '__#',
+ *     cleanup: true
+ * });
  *
  * ## Caveats
  *
