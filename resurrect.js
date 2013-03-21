@@ -1,8 +1,9 @@
 /**
- *   Resurrect will decorate serialized objects with a few additional
- * properties.
+ *   Resurrect preserves object behavior (prototypes) and reference
+ * circularity with a special JSON encoding. Date objects are also
+ * properly preserved.
  *
- * Caveats:
+ * ## Caveats
  *
  *   All constructors must be named and stored in the global variable
  * under than name.
@@ -28,6 +29,8 @@ function Resurrect(options) {
     }
     this.refcode = this.prefix + 'id';
     this.origcode = this.prefix + 'original';
+    this.buildcode = this.prefix + '.';
+    this.valuecode = this.prefix + 'v';
 }
 
 /* Helper Objects */
@@ -35,12 +38,12 @@ function Resurrect(options) {
 /**
  * @constructor
  */
-Resurrect.Error = function ResurrectError(message) {
+Resurrect.prototype.Error = function ResurrectError(message) {
     this.message = message || '';
     this.stack = new Error().stack;
 };
-Resurrect.Error.prototype = Object.create(Error.prototype);
-Resurrect.Error.prototype.name = 'ResurrectError';
+Resurrect.prototype.Error.prototype = Object.create(Error.prototype);
+Resurrect.prototype.Error.prototype.name = 'ResurrectError';
 
 /* Type Tests */
 
@@ -64,6 +67,10 @@ Resurrect.isFunction = function(object) {
     return Object.prototype.toString.call(object) === "[object Function]";
 };
 
+Resurrect.isDate = function(object) {
+    return Object.prototype.toString.call(object) === "[object Date]";
+};
+
 Resurrect.isObject = function(object) {
     return object !== null && object !== undefined &&
         !Resurrect.isArray(object) && !Resurrect.isBoolean(object) &&
@@ -74,13 +81,14 @@ Resurrect.isObject = function(object) {
 Resurrect.isAtom = function(object) {
     return object === null || object === undefined ||
         Resurrect.isBoolean(object) || Resurrect.isString(object) ||
-        Resurrect.isNumber(object) || Resurrect.isFunction(object);
+        Resurrect.isNumber(object) || Resurrect.isFunction(object) ||
+        Resurrect.isDate(object);
 };
 
 /* Methods */
 
 /**
- * Create a reference to an object.
+ * Create a reference (encoding) to an object.
  * @method
  */
 Resurrect.prototype.ref = function(object) {
@@ -94,12 +102,18 @@ Resurrect.prototype.ref = function(object) {
 };
 
 /**
+ * Lookup an object in the table by reference object.
  * @method
  */
 Resurrect.prototype.deref = function(ref) {
     return this.table[ref[this.prefix]];
 };
 
+/**
+ * Put a temporary identifier on an object and store it in the table.
+ * @returns {number} The unique identifier number.
+ * @method
+ */
 Resurrect.prototype.tag = function(object) {
     if (this.revive) {
         var constructor = object.constructor.name;
@@ -120,10 +134,56 @@ Resurrect.prototype.tag = function(object) {
     return object[this.refcode];
 };
 
+/**
+ * Create a builder object (encoding) for serialization.
+ * @param {string} name The name of the constructor.
+ * @param value The value to pass to the constructor.
+ * @method
+ */
+Resurrect.prototype.builder = function(name, value) {
+    var builder = {};
+    builder[this.buildcode] = name;
+    builder[this.valuecode] = value;
+    return builder;
+};
+
+/**
+ * Build a value from a deserialized builder.
+ * @method
+ */
+Resurrect.prototype.build = function(ref) {
+    var type = window[ref[this.buildcode]];
+    return new type(ref[this.valuecode]);
+};
+
+/**
+ * Dereference or build an object or value from an encoding.
+ * @method
+ */
+Resurrect.prototype.decode = function(ref) {
+    if (this.prefix in ref) {
+        return this.deref(ref);
+    } else if (this.buildcode in ref) {
+        return this.build(ref);
+    } else {
+        throw new this.Error('Unknown encoding.');
+    }
+};
+
+/**
+ * @returns True if the provided object is already tagged for serialization.
+ * @method
+ */
 Resurrect.prototype.isTagged = function(object) {
     return (this.refcode in object) && (object[this.refcode] != null);
 };
 
+/**
+ * Visit root and all its ancestors, visiting atoms with f.
+ * @param {Function} f
+ * @returns A fresh copy of root to be serialized.
+ * @method
+ */
 Resurrect.prototype.visit = function(root, f) {
     if (Resurrect.isAtom(root)) {
         return f(root);
@@ -152,22 +212,30 @@ Resurrect.prototype.visit = function(root, f) {
 };
 
 /**
+ * Manage special atom values, possibly returning an encoding.
+ */
+Resurrect.prototype.handleAtom = function(atom) {
+    if (Resurrect.isFunction(atom)) {
+        throw new this.Error("Can't serialize functions.");
+    } else if (Resurrect.isDate(atom)) {
+        return this.builder('Date', atom.toISOString());
+    } else if (atom === undefined) {
+        return this.ref(undefined);
+    } else {
+        return atom;
+    }
+};
+
+/**
+ * Serialize an arbitrary JavaScript object, carefully preserving it.
  * @method
  */
 Resurrect.prototype.stringify = function(object) {
-    this.table = [];
     if (Resurrect.isAtom(object)) {
-        this.table.push(object);
+        return JSON.stringify(this.handleAtom(object));
     } else {
-        this.visit(object, function(atom) {
-            if (Resurrect.isFunction(atom)) {
-                throw new this.Error("Can't serialize functions.");
-            } else if (atom === undefined) {
-                return this.ref(undefined);
-            } else {
-                return atom;
-            }
-        }.bind(this));
+        this.table = [];
+        this.visit(object, this.handleAtom.bind(this));
         for (var i = 0; i < this.table.length; i++) {
             if (this.cleanup) {
                 delete this.table[i][this.origcode][this.refcode];
@@ -177,42 +245,63 @@ Resurrect.prototype.stringify = function(object) {
             delete this.table[i][this.refcode];
             delete this.table[i][this.origcode];
         }
+        var table = this.table;
+        this.table = null;
+        return JSON.stringify(table);
     }
-    var table = this.table;
-    this.table = null;
-    return JSON.stringify(table);
 };
 
 /**
+ * Restore the __proto__ of the given object to the proper value.
+ * @returns The object.
+ */
+Resurrect.prototype.fixPrototype = function(object) {
+    if (this.prefix in object) {
+        var name = object[this.prefix];
+        var constructor = window[name];
+        if (constructor) {
+            object.__proto__ = constructor.prototype;
+        } else {
+            throw new this.Error('Unknown constructor: ' + name);
+        }
+        if (this.cleanup) {
+            delete object[this.prefix];
+        }
+    }
+    return object;
+};
+
+/**
+ * Deserialize an encoded object, restoring circularity and behavior.
+ * @param {string} string
+ * @returns The decoded object or value.
  * @method
  */
 Resurrect.prototype.resurrect = function(string) {
-    this.table = JSON.parse(string);
-    for (var i = 0; i < this.table.length; i++) {
-        var object = this.table[i];
-        if (!Resurrect.isAtom(object)) {
+    var result = null;
+    var data = JSON.parse(string);
+    if (Resurrect.isArray(data)) {
+        this.table = data;
+        for (var i = 0; i < this.table.length; i++) {
+            var object = this.table[i];
             for (var key in object) {
                 if (object.hasOwnProperty(key)) {
                     if (!(Resurrect.isAtom(object[key]))) {
-                        object[key] = this.deref(object[key]);
+                        object[key] = this.decode(object[key]);
                     }
                 }
             }
-            if (this.revive && (this.prefix in object)) {
-                var name = object[this.prefix];
-                var constructor = window[name];
-                if (constructor) {
-                    object.__proto__ = constructor.prototype;
-                } else {
-                    throw new this.Error('Unknown constructor: ' + name);
-                }
-                if (this.cleanup) {
-                    delete object[this.prefix];
-                }
+            if (this.revive) {
+                this.fixPrototype(object);
             }
         }
+        result = this.table[0];
+    } else if (Resurrect.isObject(data)) {
+        this.table = [];
+        result = this.decode(data);
+    } else {
+        result = data;
     }
-    var result = this.table[0];
     this.table = null;
     return result;
 };
