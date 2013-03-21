@@ -33,21 +33,21 @@ Object.prototype.toString.call(date);  // => "[object Date]"
 Options are provided to the constructor as an object with these
 properties:
 
- * prefix ('#'): A prefix string used for temporary properties added
+ * *prefix* (`"#"`): A prefix string used for temporary properties added
      to objects during serialization and deserialization. It is
      important that you don't use any properties beginning with this
      string. This option must be consistent between both serialization
      and deserialization.
 
- * cleanup (false): Perform full property cleanup after both
+ * *cleanup* (`false`): Perform full property cleanup after both
      serialization and deserialization using the delete operator. This
      may cause performance penalties (breaking hidden classes in V8)
      on objects that ResurrectJS touches, to enable with care.
 
- * revive (true): Restore behavior (`__proto__`) to objects that have
-     been resurrected. If this is set to false during serialization,
-     resurrection information will not be encoded. You still get
-     circularity and Date support.
+ * *revive* (`true`): Restore behavior (`__proto__`) to objects that
+     have been resurrected. If this is set to false during
+     serialization, resurrection information will not be encoded. You
+     still get circularity and Date support.
 
 For example,
 
