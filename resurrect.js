@@ -20,6 +20,7 @@ function Resurrect(options) {
     this.table = null;
     this.prefix = '#';
     this.cleanup = false;
+    this.revive = true;
     for (var option in options) {
         if (options.hasOwnProperty(option)) {
             this[option] = options[option];
@@ -100,14 +101,18 @@ Resurrect.prototype.deref = function(ref) {
 };
 
 Resurrect.prototype.tag = function(object) {
-    var constructor = object.constructor.name;
-    if (constructor === '') {
-        throw new this.Error("Can't serialize with anonymous constructors.");
-    } else if (constructor !== 'Object') {
-        if (window[constructor].prototype !== Object.getPrototypeOf(object)) {
-            throw new this.Error('Constructor mismatch!');
-        } else {
-            object[this.prefix] = constructor;
+    if (this.revive) {
+        var constructor = object.constructor.name;
+        if (constructor === '') {
+            throw new this.Error("Can't serialize objects with anonymous " +
+                                 "constructors.");
+        } else if (constructor !== 'Object') {
+            var proto = Object.getPrototypeOf(object);
+            if (window[constructor].prototype !== proto) {
+                throw new this.Error('Constructor mismatch!');
+            } else {
+                object[this.prefix] = constructor;
+            }
         }
     }
     object[this.refcode] = this.table.length;
@@ -193,7 +198,7 @@ Resurrect.prototype.resurrect = function(string) {
                     }
                 }
             }
-            if (this.prefix in object) {
+            if (this.revive && (this.prefix in object)) {
                 var name = object[this.prefix];
                 var constructor = window[name];
                 if (constructor) {
