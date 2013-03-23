@@ -134,6 +134,11 @@ Resurrect.GlobalResolver.prototype.getPrototype = function(name) {
  */
 Resurrect.GlobalResolver.prototype.getName = function(object) {
     var constructor = object.constructor.name;
+    if (constructor == null) { // IE
+        var funcPattern = /^\s*function\s*([A-Za-z0-9_$]*)/;
+        constructor = funcPattern.exec(object.constructor)[1];
+    }
+
     if (constructor === '') {
         var msg = "Can't serialize objects with anonymous constructors.";
         throw new Resurrect.prototype.Error(msg);
@@ -357,13 +362,25 @@ Resurrect.prototype.stringify = function(object) {
 Resurrect.prototype.fixPrototype = function(object) {
     if (this.prefix in object) {
         var name = object[this.prefix];
-        var constructor = this.resolver.getPrototype(name);
-        object.__proto__ = this.resolver.getPrototype(name);
-        if (this.cleanup) {
-            delete object[this.prefix];
+        var prototype = this.resolver.getPrototype(name);
+        if ('__proto__' in object) {
+            object.__proto__ = prototype;
+            if (this.cleanup) {
+                delete object[this.prefix];
+            }
+            return object;
+        } else { // IE
+            var copy = Object.create(prototype);
+            for (var key in object) {
+                if (object.hasOwnProperty(key) && key !== this.prefix) {
+                    copy[key] = object[key];
+                }
+            }
+            return copy;
         }
+    } else {
+        return object;
     }
-    return object;
 };
 
 /**
@@ -377,7 +394,14 @@ Resurrect.prototype.resurrect = function(string) {
     var data = JSON.parse(string);
     if (Resurrect.isArray(data)) {
         this.table = data;
-        for (var i = 0; i < this.table.length; i++) {
+        /* Restore __proto__. */
+        if (this.revive) {
+            for (var i = 0; i < this.table.length; i++) {
+                this.table[i] = this.fixPrototype(this.table[i]);
+            }
+        }
+        /* Re-establish object references and construct atoms. */
+        for (i = 0; i < this.table.length; i++) {
             var object = this.table[i];
             for (var key in object) {
                 if (object.hasOwnProperty(key)) {
@@ -385,9 +409,6 @@ Resurrect.prototype.resurrect = function(string) {
                         object[key] = this.decode(object[key]);
                     }
                 }
-            }
-            if (this.revive) {
-                this.fixPrototype(object);
             }
         }
         result = this.table[0];
