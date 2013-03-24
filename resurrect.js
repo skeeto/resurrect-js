@@ -240,10 +240,14 @@ Resurrect.prototype.builder = function(name, value) {
 /**
  * Build a value from a deserialized builder.
  * @method
+ * @see http://stackoverflow.com/a/14378462
  */
 Resurrect.prototype.build = function(ref) {
     var type = window[ref[this.buildcode]];
-    return new type(ref[this.valuecode]);
+    /* Brilliant hack by kybernetikos: */
+    var args = [null].concat(ref[this.valuecode]);
+    var factory = type.bind.apply(type, args);
+    return new factory();
 };
 
 /**
@@ -308,7 +312,10 @@ Resurrect.prototype.handleAtom = function(atom) {
     if (Resurrect.isFunction(atom)) {
         throw new this.Error("Can't serialize functions.");
     } else if (Resurrect.isDate(atom)) {
-        return this.builder('Date', atom.toISOString());
+        return this.builder('Date', [atom.toISOString()]);
+    } else if (Resurrect.isRegExp(atom)) {
+        var args = atom.toString().match(/\/(.+)\/([gimy]*)/).slice(1);
+        return this.builder('RegExp', args);
     } else if (atom === undefined) {
         return this.ref(undefined);
     } else {
