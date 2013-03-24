@@ -154,42 +154,28 @@ Resurrect.prototype.resolver = new Resurrect.GlobalResolver();
 
 /* Type Tests */
 
-Resurrect.isArray = function(object) {
-    return Object.prototype.toString.call(object) === '[object Array]';
+/**
+ * @param {string} type
+ * @returns {Function} A function that tests for type.
+ */
+Resurrect.is = function(type) {
+    var string = '[object ' + type + ']';
+    return function(object) {
+        return Object.prototype.toString.call(object) === string;
+    };
 };
 
-Resurrect.isString = function(object) {
-    return Object.prototype.toString.call(object) === '[object String]';
-};
-
-Resurrect.isBoolean = function(object) {
-    return Object.prototype.toString.call(object) === '[object Boolean]';
-};
-
-Resurrect.isNumber = function(object) {
-    return Object.prototype.toString.call(object) === '[object Number]';
-};
-
-Resurrect.isFunction = function(object) {
-    return Object.prototype.toString.call(object) === "[object Function]";
-};
-
-Resurrect.isDate = function(object) {
-    return Object.prototype.toString.call(object) === "[object Date]";
-};
-
-Resurrect.isObject = function(object) {
-    return object !== null && object !== undefined &&
-        !Resurrect.isArray(object) && !Resurrect.isBoolean(object) &&
-        !Resurrect.isString(object) && !Resurrect.isNumber(object) &&
-        !Resurrect.isFunction(object);
-};
+Resurrect.isArray = Resurrect.is('Array');
+Resurrect.isString = Resurrect.is('String');
+Resurrect.isBoolean = Resurrect.is('Boolean');
+Resurrect.isNumber = Resurrect.is('Number');
+Resurrect.isFunction = Resurrect.is('Function');
+Resurrect.isDate = Resurrect.is('Date');
+Resurrect.isRegExp = Resurrect.is('RegExp');
+Resurrect.isObject = Resurrect.is('Object');
 
 Resurrect.isAtom = function(object) {
-    return object === null || object === undefined ||
-        Resurrect.isBoolean(object) || Resurrect.isString(object) ||
-        Resurrect.isNumber(object) || Resurrect.isFunction(object) ||
-        Resurrect.isDate(object);
+    return !Resurrect.isObject(object) && !Resurrect.isArray(object);
 };
 
 /* Methods */
