@@ -152,6 +152,16 @@ Resurrect.GlobalResolver.prototype.getName = function(object) {
 /* Set the default resolver. */
 Resurrect.prototype.resolver = new Resurrect.GlobalResolver();
 
+/**
+ * Create a DOM node from HTML source; behaves like a constructor.
+ * @constructor
+ */
+Resurrect.Node = function(html) {
+    var div = document.createElement('div');
+    div.innerHTML = html;
+    return div.firstChild;
+};
+
 /* Type Tests */
 
 /**
@@ -314,7 +324,8 @@ Resurrect.prototype.handleAtom = function(atom) {
     if (Resurrect.isFunction(atom)) {
         throw new this.Error("Can't serialize functions.");
     } else if (atom instanceof Node) {
-        throw new this.Error("Can't serialize DOM objects.");
+        var xmls = new XMLSerializer();
+        return this.builder('Resurrect.Node', [xmls.serializeToString(atom)]);
     } else if (Resurrect.isDate(atom)) {
         return this.builder('Date', [atom.toISOString()]);
     } else if (Resurrect.isRegExp(atom)) {
