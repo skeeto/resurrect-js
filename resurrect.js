@@ -311,6 +311,8 @@ Resurrect.prototype.visit = function(root, f) {
 Resurrect.prototype.handleAtom = function(atom) {
     if (Resurrect.isFunction(atom)) {
         throw new this.Error("Can't serialize functions.");
+    } else if (atom instanceof Node) {
+        throw new this.Error("Can't serialize DOM objects.");
     } else if (Resurrect.isDate(atom)) {
         return this.builder('Date', [atom.toISOString()]);
     } else if (Resurrect.isRegExp(atom)) {
