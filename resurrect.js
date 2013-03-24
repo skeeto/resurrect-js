@@ -243,7 +243,9 @@ Resurrect.prototype.builder = function(name, value) {
  * @see http://stackoverflow.com/a/14378462
  */
 Resurrect.prototype.build = function(ref) {
-    var type = window[ref[this.buildcode]];
+    var type = ref[this.buildcode].split(/\./).reduce(function(object, name) {
+        return object[name];
+    }, window);
     /* Brilliant hack by kybernetikos: */
     var args = [null].concat(ref[this.valuecode]);
     var factory = type.bind.apply(type, args);
