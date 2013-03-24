@@ -11,7 +11,15 @@ also properly resurrect these types of values:
 Types not supported are:
 
  * DOM
- * Functions/Closures
+ * Functions
+
+Supported Browsers:
+
+ * Chrome
+ * Firefox
+ * Safari
+ * Opera
+ * IE9+
 
 ## Examples
 
