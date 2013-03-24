@@ -6,12 +6,8 @@ also properly resurrect these types of values:
 
  * Date
  * RegExp
+ * DOM objects
  * `undefined`
-
-Types not supported are:
-
- * DOM
- * Functions
 
 Supported Browsers:
 
@@ -91,8 +87,8 @@ The wrapper objects Boolean, String, and Number will be
 unwrapped. This means extra properties added to these objects will not
 be preserved.
 
-DOM objects and functions cannot be serialized. Resurrect will throw
-an error if these types are found when traversing a data structure.
+Functions cannot ever be serialized. Resurrect will throw an error if
+a function is found when traversing a data structure.
 
 ## See Also
 

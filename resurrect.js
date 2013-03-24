@@ -2,8 +2,9 @@
  * # ResurrectJS
  *
  * ResurrectJS preserves object behavior (prototypes) and reference
- * circularity with a special JSON encoding. Unlike regular JSON, Date
- * objects and `undefined` are also properly preserved.
+ * circularity with a special JSON encoding. Unlike regular JSON,
+ * Date, RegExp, DOM objects, and `undefined` are also properly
+ * preserved.
  *
  * ## Examples
  *
@@ -71,6 +72,9 @@
  *   * The wrapper objects Boolean, String, and Number will be
  *   unwrapped. This means extra properties added to these objects
  *   will not be preserved.
+ *
+ *   * Functions cannot ever be serialized. Resurrect will throw an
+ *   error if a function is found when traversing a data structure.
  */
 
 /**
