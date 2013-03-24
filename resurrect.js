@@ -50,10 +50,10 @@
  *     resurrection information will not be encoded. You still get
  *     circularity and Date support.
  *
- *   resolver (Resurrect.GlobalResolver): Converts between a name and
- *     a prototype. Create a custom resolver if your constructors are
- *     not stored in global variables. The resolver has two methods:
- *     getName(object) and getPrototype(string).
+ *   resolver (Resurrect.NamespaceResolver(window)): Converts between
+ *     a name and a prototype. Create a custom resolver if your
+ *     constructors are not stored in global variables. The resolver
+ *     has two methods: getName(object) and getPrototype(string).
  *
  * For example,
  *
@@ -110,19 +110,22 @@ Resurrect.prototype.Error.prototype = Object.create(Error.prototype);
 Resurrect.prototype.Error.prototype.name = 'ResurrectError';
 
 /**
- * Resolves prototypes through global variables and constructor names.
+ * Resolves prototypes through the properties on an object and
+ * constructor names.
  * @constructor
  */
-Resurrect.GlobalResolver = function() {};
+Resurrect.NamespaceResolver = function(scope) {
+    this.scope = scope;
+};
 
 /**
- * Gets the prototype of the given name from the global namespace. If
+ * Gets the prototype of the given property name from an object. If
  * not found, it throws an error.
  * @param {string} name
  * @method
  */
-Resurrect.GlobalResolver.prototype.getPrototype = function(name) {
-    var constructor = window[name];
+Resurrect.NamespaceResolver.prototype.getPrototype = function(name) {
+    var constructor = this.scope[name];
     if (constructor) {
         return constructor.prototype;
     } else {
@@ -136,7 +139,7 @@ Resurrect.GlobalResolver.prototype.getPrototype = function(name) {
  * @returns {string} Null if the constructor is Object.
  * @method
  */
-Resurrect.GlobalResolver.prototype.getName = function(object) {
+Resurrect.NamespaceResolver.prototype.getName = function(object) {
     var constructor = object.constructor.name;
     if (constructor == null) { // IE
         var funcPattern = /^\s*function\s*([A-Za-z0-9_$]*)/;
@@ -153,8 +156,8 @@ Resurrect.GlobalResolver.prototype.getName = function(object) {
     }
 };
 
-/* Set the default resolver. */
-Resurrect.prototype.resolver = new Resurrect.GlobalResolver();
+/* Set the default resolver searches the global object. */
+Resurrect.prototype.resolver = new Resurrect.NamespaceResolver(window);
 
 /**
  * Create a DOM node from HTML source; behaves like a constructor.
