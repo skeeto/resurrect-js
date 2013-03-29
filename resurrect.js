@@ -149,7 +149,7 @@ Resurrect.NamespaceResolver.prototype.getName = function(object) {
     if (constructor === '') {
         var msg = "Can't serialize objects with anonymous constructors.";
         throw new Resurrect.prototype.Error(msg);
-    } else if (constructor === 'Object') {
+    } else if (constructor === 'Object' || constructor === 'Array') {
         return null;
     } else {
         return constructor;
