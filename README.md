@@ -17,6 +17,8 @@ Supported Browsers:
  * Opera
  * IE9+
 
+Read about [how it works](http://nullprogram.com/blog/2013/03/28/).
+
 ## Examples
 
 ```javascript
