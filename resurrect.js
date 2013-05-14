@@ -1,5 +1,6 @@
 /**
  * # ResurrectJS
+ * @version 1.0.0
  *
  * ResurrectJS preserves object behavior (prototypes) and reference
  * circularity with a special JSON encoding. Unlike regular JSON,
