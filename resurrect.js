@@ -100,6 +100,13 @@ function Resurrect(options) {
     this.valuecode = this.prefix + 'v';
 }
 
+/**
+ * Portable access to the global object (window, global).
+ * Uses indirect eval.
+ * @constant
+ */
+Resurrect.GLOBAL = (0, eval)('this');
+
 /* Helper Objects */
 
 /**
@@ -160,7 +167,8 @@ Resurrect.NamespaceResolver.prototype.getName = function(object) {
 };
 
 /* Set the default resolver searches the global object. */
-Resurrect.prototype.resolver = new Resurrect.NamespaceResolver(window);
+Resurrect.prototype.resolver =
+    new Resurrect.NamespaceResolver(Resurrect.GLOBAL);
 
 /**
  * Create a DOM node from HTML source; behaves like a constructor.
@@ -266,7 +274,7 @@ Resurrect.prototype.builder = function(name, value) {
 Resurrect.prototype.build = function(ref) {
     var type = ref[this.buildcode].split(/\./).reduce(function(object, name) {
         return object[name];
-    }, window);
+    }, Resurrect.GLOBAL);
     /* Brilliant hack by kybernetikos: */
     var args = [null].concat(ref[this.valuecode]);
     var factory = type.bind.apply(type, args);
@@ -332,6 +340,7 @@ Resurrect.prototype.visit = function(root, f) {
  * Manage special atom values, possibly returning an encoding.
  */
 Resurrect.prototype.handleAtom = function(atom) {
+    var Node = Resurrect.GLOBAL.Node || function() {};
     if (Resurrect.isFunction(atom)) {
         throw new this.Error("Can't serialize functions.");
     } else if (atom instanceof Node) {
