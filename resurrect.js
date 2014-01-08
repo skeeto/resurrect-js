@@ -76,6 +76,8 @@
  *
  *   * Functions cannot ever be serialized. Resurrect will throw an
  *   error if a function is found when traversing a data structure.
+ *
+ * @see http://nullprogram.com/blog/2013/03/28/
  */
 
 /**
@@ -259,6 +261,7 @@ Resurrect.prototype.builder = function(name, value) {
  * Build a value from a deserialized builder.
  * @method
  * @see http://stackoverflow.com/a/14378462
+ * @see http://nullprogram.com/blog/2013/03/24/
  */
 Resurrect.prototype.build = function(ref) {
     var type = ref[this.buildcode].split(/\./).reduce(function(object, name) {
