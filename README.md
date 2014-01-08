@@ -65,9 +65,9 @@ properties:
      serialization, resurrection information will not be encoded. You
      still get circularity and Date support.
 
- * *resolver* (Resurrect.GlobalResolver): Converts between a name and
-     a prototype. Create a custom resolver if your constructors are
-     not stored in global variables. The resolver has two methods:
+ * *resolver* (Resurrect.NamespaceResolver): Converts between a name
+     and a prototype. Create a custom resolver if your constructors
+     are not stored in global variables. The resolver has two methods:
      getName(object) and getPrototype(string).
 
 For example,
