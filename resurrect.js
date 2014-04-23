@@ -362,9 +362,9 @@ Resurrect.prototype.handleAtom = function(atom) {
  * Serialize an arbitrary JavaScript object, carefully preserving it.
  * @method
  */
-Resurrect.prototype.stringify = function(object) {
+Resurrect.prototype.stringify = function(object, replacer, space) {
     if (Resurrect.isAtom(object)) {
-        return JSON.stringify(this.handleAtom(object));
+        return JSON.stringify(this.handleAtom(object), replacer, space);
     } else {
         this.table = [];
         this.visit(object, this.handleAtom.bind(this));
@@ -379,7 +379,7 @@ Resurrect.prototype.stringify = function(object) {
         }
         var table = this.table;
         this.table = null;
-        return JSON.stringify(table);
+        return JSON.stringify(table, replacer, space);
     }
 };
 
