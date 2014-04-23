@@ -92,6 +92,28 @@ be preserved.
 Functions cannot ever be serialized. Resurrect will throw an error if
 a function is found when traversing a data structure.
 
+### Custom Resolvers
+
+There is a caveat with the provided resolver, NamespaceResolver: all
+constructors *must* be explicitly named when defined. For example, see
+the Foo constructor in this example,
+
+~~~javascript
+var namespace = {};
+namespace.Foo = function Foo() {
+    this.bar = true;
+};
+var necromancer = new Resurrect({
+    resolver: new Resurrect.NamespaceResolver(namespace)
+});
+~~~
+
+The constructor been assigned to the Foo property *and* the function
+itself has been given a matching name. This is how the resolver will
+find the name of the constructor in the namespace when given the
+constructor. Keep in mind that using this form will bind the variable
+Foo to the surrounding function within the body of Foo.
+
 ## See Also
 
 * [HydrateJS](https://github.com/nanodeath/HydrateJS)
