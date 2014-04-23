@@ -360,6 +360,9 @@ Resurrect.prototype.handleAtom = function(atom) {
 
 /**
  * Serialize an arbitrary JavaScript object, carefully preserving it.
+ * @param object
+ * @param {(Function|Array)} replacer
+ * @param {string} space
  * @method
  */
 Resurrect.prototype.stringify = function(object, replacer, space) {
