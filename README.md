@@ -79,6 +79,22 @@ var necromancer = new Resurrect({
 });
 ```
 
+## Methods
+
+Only two methods are significant when using ResurrectJS.
+
+ * `.stringify(object[, replacer[, space]])`: Serializes an arbitrary
+     object or value into a string. The `replacer` and `space`
+     arguments are the same as [JSON.stringify][json-mdn], being
+     passed through to this method. Note that the replacer will *not*
+     be called for ResurrectJS's intrusive keys. Also, the value
+     returned by the replacer will not be run through ResurrectJS
+     again, so it must be suitable for plain JSON.
+
+ * `.resurrect(string)`: Deserializes an object stored in a string by
+     a previous call to `.stringify()`. Circularity and, optionally,
+     behavior (prototype chain) will be restored.
+
 ## Restrictions
 
 With the default resolver, all constructors must be named and stored
@@ -117,3 +133,6 @@ Foo to the surrounding function within the body of Foo.
 ## See Also
 
 * [HydrateJS](https://github.com/nanodeath/HydrateJS)
+
+
+[json-mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
