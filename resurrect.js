@@ -108,6 +108,16 @@ function Resurrect(options) {
  */
 Resurrect.GLOBAL = (0, eval)('this');
 
+/**
+ * Escape special regular expression characters in a string.
+ * @param {string} string
+ * @returns {string} string escaped for exact matches
+ * @see http://stackoverflow.com/a/6969486
+ */
+Resurrect.escapeRegExp = function (string) {
+    return string.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+};
+
 /* Helper Objects */
 
 /**
@@ -360,6 +370,21 @@ Resurrect.prototype.handleAtom = function(atom) {
 };
 
 /**
+ * @param {Function} replacer function of two arguments (key, value)
+ * @returns {Function} a function that skips the replacer for intrusive keys
+ */
+Resurrect.prototype.replacerWrapper = function(replacer) {
+    var skip = new RegExp('^' + Resurrect.escapeRegExp(this.prefix));
+    return function(k, v) {
+        if (skip.test(k)) {
+            return v;
+        } else {
+            return replacer(k, v);
+        }
+    };
+};
+
+/**
  * Serialize an arbitrary JavaScript object, carefully preserving it.
  * @param object
  * @param {(Function|Array)} replacer
@@ -367,6 +392,9 @@ Resurrect.prototype.handleAtom = function(atom) {
  * @method
  */
 Resurrect.prototype.stringify = function(object, replacer, space) {
+    if (Resurrect.isFunction(replacer)) {
+        replacer = this.replacerWrapper(replacer);
+    }
     if (Resurrect.isAtom(object)) {
         return JSON.stringify(this.handleAtom(object), replacer, space);
     } else {
