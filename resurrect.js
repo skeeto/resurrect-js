@@ -416,6 +416,15 @@ Resurrect.prototype.replacerWrapper = function(replacer) {
 Resurrect.prototype.stringify = function(object, replacer, space) {
     if (Resurrect.isFunction(replacer)) {
         replacer = this.replacerWrapper(replacer);
+    } else if (Resurrect.isArray(replacer)) {
+        var codes = [
+            this.prefix,
+            this.refcode,
+            this.origcode,
+            this.buildcode,
+            this.valuecode
+        ];
+        replacer = codes.concat(replacer);
     }
     if (Resurrect.isAtom(object)) {
         return JSON.stringify(this.handleAtom(object), replacer, space);
