@@ -222,6 +222,17 @@ Resurrect.isAtom = function(object) {
     return !Resurrect.isObject(object) && !Resurrect.isArray(object);
 };
 
+/**
+ * @param {*} object
+ * @returns {boolean} True if object is a primitive or a primitive wrapper.
+ */
+Resurrect.isPrimitive = function(object) {
+    return object == null ||
+        Resurrect.isNumber(object) ||
+        Resurrect.isString(object) ||
+        Resurrect.isBoolean(object);
+};
+
 /* Methods */
 
 /**
@@ -302,7 +313,12 @@ Resurrect.prototype.build = function(ref) {
     /* Brilliant hack by kybernetikos: */
     var args = [null].concat(ref[this.valuecode]);
     var factory = type.bind.apply(type, args);
-    return new factory();
+    var result = new factory();
+    if (Resurrect.isPrimitive(result)) {
+        return result.valueOf(); // unwrap
+    } else {
+        return result;
+    }
 };
 
 /**
@@ -384,6 +400,8 @@ Resurrect.prototype.handleAtom = function(atom) {
         return this.builder('RegExp', args);
     } else if (atom === undefined) {
         return this.ref(undefined);
+    } else if (Number.isNaN(atom) || !Number.isFinite(atom)) {
+        return this.builder('Number', [atom.toString()]);
     } else {
         return atom;
     }

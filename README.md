@@ -8,6 +8,7 @@ also properly resurrect these types of values:
  * RegExp
  * DOM objects
  * `undefined`
+ * NaN, Infinity, -Infinity
 
 Supported Browsers:
 
