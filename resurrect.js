@@ -400,7 +400,8 @@ Resurrect.prototype.handleAtom = function(atom) {
         return this.builder('RegExp', args);
     } else if (atom === undefined) {
         return this.ref(undefined);
-    } else if (Number.isNaN(atom) || !Number.isFinite(atom)) {
+    } else if (Resurrect.isNumber(atom) &&
+               (Number.isNaN(atom) || !Number.isFinite(atom))) {
         return this.builder('Number', [atom.toString()]);
     } else {
         return atom;
