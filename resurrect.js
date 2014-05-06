@@ -1,6 +1,6 @@
 /**
  * # ResurrectJS
- * @version 1.0.2
+ * @version 1.0.3
  * @license Public Domain
  *
  * ResurrectJS preserves object behavior (prototypes) and reference
