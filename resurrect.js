@@ -467,7 +467,7 @@ Resurrect.prototype.stringify = function(object, replacer, space) {
 /**
  * Restore the __proto__ of the given object to the proper value.
  * @param {Object} object
- * @returns {Object} Its argument.
+ * @returns {Object} Its argument, or a copy, with the prototype restored.
  * @method
  */
 Resurrect.prototype.fixPrototype = function(object) {
