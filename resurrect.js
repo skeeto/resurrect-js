@@ -368,8 +368,16 @@ Resurrect.prototype.visit = function(root, f) {
             copy = Object.create(Object.getPrototypeOf(root));
             root[this.refcode] = this.tag(copy);
             for (var key in root) {
+                var value = root[key];
                 if (root.hasOwnProperty(key)) {
-                    copy[key] = this.visit(root[key], f);
+                    if (this.replacer && value !== undefined) {
+                      // Call replacer as normal for JSON.stringify's replacer function.
+                      value = this.replacer.call(root, key, root[key]);
+                      if (value === undefined) {
+                        continue; // Do not add this key/value to the result
+                      }
+                    }
+                    copy[key] = this.visit(value, f);
                 }
             }
         }
@@ -448,6 +456,7 @@ Resurrect.prototype.stringify = function(object, replacer, space) {
         return JSON.stringify(this.handleAtom(object), replacer, space);
     } else {
         this.table = [];
+        this.replacer = replacer;
         this.visit(object, this.handleAtom.bind(this));
         for (var i = 0; i < this.table.length; i++) {
             if (this.cleanup) {
@@ -460,7 +469,8 @@ Resurrect.prototype.stringify = function(object, replacer, space) {
         }
         var table = this.table;
         this.table = null;
-        return JSON.stringify(table, replacer, space);
+        this.replacer = null;
+        return JSON.stringify(table, null, space);
     }
 };
 
