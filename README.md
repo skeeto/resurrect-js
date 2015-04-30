@@ -88,9 +88,7 @@ Only two methods are significant when using ResurrectJS.
      object or value into a string. The `replacer` and `space`
      arguments are the same as [JSON.stringify][json-mdn], being
      passed through to this method. Note that the replacer will *not*
-     be called for ResurrectJS's intrusive keys. Also, the value
-     returned by the replacer will not be run through ResurrectJS
-     again, so it must be suitable for plain JSON.
+     be called for ResurrectJS's intrusive keys.
 
  * `.resurrect(string)`: Deserializes an object stored in a string by
      a previous call to `.stringify()`. Circularity and, optionally,

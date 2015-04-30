@@ -350,10 +350,11 @@ Resurrect.prototype.isTagged = function(object) {
  * Visit root and all its ancestors, visiting atoms with f.
  * @param {*} root
  * @param {Function} f
+ * @param {Function} replacer
  * @returns {*} A fresh copy of root to be serialized.
  * @method
  */
-Resurrect.prototype.visit = function(root, f) {
+Resurrect.prototype.visit = function(root, f, replacer) {
     if (Resurrect.isAtom(root)) {
         return f(root);
     } else if (!this.isTagged(root)) {
@@ -362,14 +363,22 @@ Resurrect.prototype.visit = function(root, f) {
             copy = [];
             root[this.refcode] = this.tag(copy);
             for (var i = 0; i < root.length; i++) {
-                copy.push(this.visit(root[i], f));
+                copy.push(this.visit(root[i], f, replacer));
             }
         } else { /* Object */
             copy = Object.create(Object.getPrototypeOf(root));
             root[this.refcode] = this.tag(copy);
             for (var key in root) {
+                var value = root[key];
                 if (root.hasOwnProperty(key)) {
-                    copy[key] = this.visit(root[key], f);
+                    if (replacer && value !== undefined) {
+                        // Call replacer like JSON.stringify's replacer
+                        value = replacer.call(root, key, root[key]);
+                        if (value === undefined) {
+                            continue; // Omit from result
+                        }
+                    }
+                    copy[key] = this.visit(value, f, replacer);
                 }
             }
         }
@@ -435,20 +444,16 @@ Resurrect.prototype.stringify = function(object, replacer, space) {
     if (Resurrect.isFunction(replacer)) {
         replacer = this.replacerWrapper(replacer);
     } else if (Resurrect.isArray(replacer)) {
-        var codes = [
-            this.prefix,
-            this.refcode,
-            this.origcode,
-            this.buildcode,
-            this.valuecode
-        ];
-        replacer = codes.concat(replacer);
+        var acceptKeys = replacer;
+        replacer = function(k, v) {
+            return acceptKeys.indexOf(k) >= 0 ? v : undefined;
+        };
     }
     if (Resurrect.isAtom(object)) {
         return JSON.stringify(this.handleAtom(object), replacer, space);
     } else {
         this.table = [];
-        this.visit(object, this.handleAtom.bind(this));
+        this.visit(object, this.handleAtom.bind(this), replacer);
         for (var i = 0; i < this.table.length; i++) {
             if (this.cleanup) {
                 delete this.table[i][this.origcode][this.refcode];
@@ -460,7 +465,7 @@ Resurrect.prototype.stringify = function(object, replacer, space) {
         }
         var table = this.table;
         this.table = null;
-        return JSON.stringify(table, replacer, space);
+        return JSON.stringify(table, null, space);
     }
 };
 
