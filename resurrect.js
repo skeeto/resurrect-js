@@ -57,6 +57,9 @@
  *     constructors are not stored in global variables. The resolver
  *     has two methods: getName(object) and getPrototype(string).
  *
+ * 	 exceptionKeys ([]): Array containing the list of property keys of
+ * 	   object that will be ignored.
+ *
  * For example,
  *
  * var necromancer = new Resurrect({
@@ -91,6 +94,7 @@ function Resurrect(options) {
     this.prefix = '#';
     this.cleanup = false;
     this.revive = true;
+    this.exceptionKeys = [];
     for (var option in options) {
         if (options.hasOwnProperty(option)) {
             this[option] = options[option];
@@ -136,10 +140,12 @@ Resurrect.prototype.Error.prototype.name = 'ResurrectError';
  * Resolves prototypes through the properties on an object and
  * constructor names.
  * @param {Object} scope
+ * @param {String} property containing constructor name at prototype
  * @constructor
  */
-Resurrect.NamespaceResolver = function(scope) {
+Resurrect.NamespaceResolver = function(scope, constructorNameAtProto) {
     this.scope = scope;
+    this.constructorNameAtProto = constructorNameAtProto;
 };
 
 /**
@@ -169,6 +175,12 @@ Resurrect.NamespaceResolver.prototype.getName = function(object) {
     if (constructor == null) { // IE
         var funcPattern = /^\s*function\s*([A-Za-z0-9_$]*)/;
         constructor = funcPattern.exec(object.constructor)[1];
+    }
+    
+    if (constructor === '') {
+    	if (this.constructorNameAtProto && object.__proto__ && object.__proto__[this.constructorNameAtProto]) {
+    		constructor = object.__proto__[this.constructorNameAtProto];
+    	}
     }
 
     if (constructor === '') {
@@ -370,7 +382,7 @@ Resurrect.prototype.visit = function(root, f, replacer) {
             root[this.refcode] = this.tag(copy);
             for (var key in root) {
                 var value = root[key];
-                if (root.hasOwnProperty(key)) {
+                if (root.hasOwnProperty(key) && this.exceptionKeys.indexOf(key) === -1) {
                     if (replacer && value !== undefined) {
                         // Call replacer like JSON.stringify's replacer
                         value = replacer.call(root, key, root[key]);
@@ -517,7 +529,7 @@ Resurrect.prototype.resurrect = function(string) {
             }
         }
         /* Re-establish object references and construct atoms. */
-        for (i = 0; i < this.table.length; i++) {
+        for (var i = 0; i < this.table.length; i++) {
             var object = this.table[i];
             for (var key in object) {
                 if (object.hasOwnProperty(key)) {
