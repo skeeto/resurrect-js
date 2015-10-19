@@ -57,14 +57,18 @@
  *     constructors are not stored in global variables. The resolver
  *     has two methods: getName(object) and getPrototype(string).
  *
- * 	 exceptionKeys ([]): Array containing the list of property keys of
- * 	   object that will be ignored.
+ * 	 propertiesFilter null): Function returning true when the property
+ * 	   should be serialized, false when doesn't. Takes three parameters:
+ * 	   property name or key, its value and the root element that cotains it.
  *
  * For example,
  *
  * var necromancer = new Resurrect({
  *     prefix: '__#',
- *     cleanup: true
+ *     cleanup: true,
+ *     propertiesFilter:	function(key, value, root) {
+ *								return key !== '_inherited';
+ *							}
  * });
  *
  * ## Caveats
@@ -94,7 +98,6 @@ function Resurrect(options) {
     this.prefix = '#';
     this.cleanup = false;
     this.revive = true;
-    this.exceptionKeys = [];
     for (var option in options) {
         if (options.hasOwnProperty(option)) {
             this[option] = options[option];
@@ -140,12 +143,14 @@ Resurrect.prototype.Error.prototype.name = 'ResurrectError';
  * Resolves prototypes through the properties on an object and
  * constructor names.
  * @param {Object} scope
- * @param {String} property containing constructor name at prototype
+ * @param {function} function that guess the constructor name. Takes
+ * 				two parameter, the object and the already default calculated
+ * 				name
  * @constructor
  */
-Resurrect.NamespaceResolver = function(scope, constructorNameAtProto) {
+Resurrect.NamespaceResolver = function(scope, constructorNamer) {
     this.scope = scope;
-    this.constructorNameAtProto = constructorNameAtProto;
+    this.constructorNamer = constructorNamer;
 };
 
 /**
@@ -166,6 +171,7 @@ Resurrect.NamespaceResolver.prototype.getPrototype = function(name) {
 
 /**
  * Get the prototype name for an object, to be fetched later with getPrototype.
+ * If no name is found, constructorNamer function if defined is used.
  * @param {Object} object
  * @returns {?string} Null if the constructor is Object.
  * @method
@@ -177,10 +183,8 @@ Resurrect.NamespaceResolver.prototype.getName = function(object) {
         constructor = funcPattern.exec(object.constructor)[1];
     }
     
-    if (constructor === '') {
-    	if (this.constructorNameAtProto && object.__proto__ && object.__proto__[this.constructorNameAtProto]) {
-    		constructor = object.__proto__[this.constructorNameAtProto];
-    	}
+    if (this.constructorNamer) {
+    	constructor = this.constructorNamer (object, constructor);
     }
 
     if (constructor === '') {
@@ -382,7 +386,7 @@ Resurrect.prototype.visit = function(root, f, replacer) {
             root[this.refcode] = this.tag(copy);
             for (var key in root) {
                 var value = root[key];
-                if (root.hasOwnProperty(key) && this.exceptionKeys.indexOf(key) === -1) {
+                if (root.hasOwnProperty(key) && this.propertiesFilter && this.propertiesFilter(key, value, root)) {
                     if (replacer && value !== undefined) {
                         // Call replacer like JSON.stringify's replacer
                         value = replacer.call(root, key, root[key]);
