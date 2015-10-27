@@ -57,9 +57,12 @@
  *     constructors are not stored in global variables. The resolver
  *     has two methods: getName(object) and getPrototype(string).
  *
- * 	 propertiesFilter null): Function returning true when the property
- * 	   should be serialized, false when doesn't. Takes three parameters:
- * 	   property name or key, its value and the root element that cotains it.
+ * 	 propertiesFilter (null): Function returning true when the property
+ *     should be serialized, false when doesn't. It allows to choose what
+ *     properties serialize or ignore depending on attribute value and name
+ *     and the element that contains it. The function is evaluated for every
+ *     attribute ant takes three parameters: property name or key, property
+ *     value and the root element that contains the property.
  *
  * For example,
  *
