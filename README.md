@@ -77,11 +77,11 @@ properties:
      and the element that contains it. The function is evaluated for every
      attribute ant takes three parameters:
 
- --* property name or key
+   * property name or key
  
- --* property value 
+   * property value 
  
- --* the root element that contains the property
+   * the root element that contains the property
 
 For example,
 
