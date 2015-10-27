@@ -386,7 +386,7 @@ Resurrect.prototype.visit = function(root, f, replacer) {
             root[this.refcode] = this.tag(copy);
             for (var key in root) {
                 var value = root[key];
-                if (root.hasOwnProperty(key) && this.propertiesFilter && this.propertiesFilter(key, value, root)) {
+                if (root.hasOwnProperty(key) && (!this.propertiesFilter || this.propertiesFilter(key, value, root))) {
                     if (replacer && value !== undefined) {
                         // Call replacer like JSON.stringify's replacer
                         value = replacer.call(root, key, root[key]);

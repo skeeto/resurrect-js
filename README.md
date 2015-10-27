@@ -70,6 +70,14 @@ properties:
      and a prototype. Create a custom resolver if your constructors
      are not stored in global variables. The resolver has two methods:
      getName(object) and getPrototype(string).
+ * *propertiesFilter* (null): Function returning true when the property
+     should be serialized, false when doesn't. It allows to choose what
+     properties serialize or ignore depending on attribute value and name
+     and the element that contains it. The function is evaluated for every
+     attribute ant takes three parameters:
+ ** property name or key
+ ** property value 
+ ** the root element that contains the property
 
 For example,
 
@@ -128,6 +136,36 @@ itself has been given a matching name. This is how the resolver will
 find the name of the constructor in the namespace when given the
 constructor. Keep in mind that using this form will bind the variable
 Foo to the surrounding function within the body of Foo.
+
+Additionally a constructor's name finder function can be also added as a 
+parameter for the nameresolver. When serializing an object this function 
+will be call to guess the constructor's name (that will be invoked when
+deserialized). The function takes two parameters:
+* Object the constructor's name will guess from
+* The already guess name
+In the following example if the constructor's name is still undefined, it will
+be guessed from the _declaredClass attribute of the __proto__ attribute of the
+object.
+
+~~~javascript
+var namespace = {};
+namespace.Foo = function Foo() {
+    this.bar = true;
+};
+var necromancer = new Resurrect({
+    resolver: new Resurrect.NamespaceResolver(
+    				namespace,
+    				function(object, constructor){
+						if (constructor === '') {
+					    	if (object.__proto__ && object.__proto__.declaredClass) {
+					    		return constructor = object.__proto__.declaredClass;
+					    	}
+					    } else {
+					    	return constructor;
+					    }
+					})
+});
+~~~
 
 ## See Also
 
