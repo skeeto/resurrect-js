@@ -70,13 +70,17 @@ properties:
      and a prototype. Create a custom resolver if your constructors
      are not stored in global variables. The resolver has two methods:
      getName(object) and getPrototype(string).
+     
  * *propertiesFilter* (null): Function returning true when the property
      should be serialized, false when doesn't. It allows to choose what
      properties serialize or ignore depending on attribute value and name
      and the element that contains it. The function is evaluated for every
      attribute ant takes three parameters:
+     
  ** property name or key
+ 
  ** property value 
+ 
  ** the root element that contains the property
 
 For example,
@@ -143,6 +147,7 @@ will be call to guess the constructor's name (that will be invoked when
 deserialized). The function takes two parameters:
 * Object the constructor's name will guess from
 * The already guess name
+
 In the following example if the constructor's name is still undefined, it will
 be guessed from the _declaredClass attribute of the __proto__ attribute of the
 object.
