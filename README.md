@@ -76,7 +76,7 @@ properties:
      properties serialize or ignore depending on attribute value and name
      and the element that contains it. The function is evaluated for every
      attribute ant takes three parameters:
-     
+
  --* property name or key
  
  --* property value 
@@ -88,7 +88,10 @@ For example,
 ```javascript
 var necromancer = new Resurrect({
     prefix: '__#',
-    cleanup: true
+    cleanup: true,
+    propertiesFilter: function(key, value, root) {
+						return key !== '_inherited';
+					}
 });
 ```
 
