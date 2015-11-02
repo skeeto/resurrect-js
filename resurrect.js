@@ -57,6 +57,7 @@
  *     constructors are not stored in global variables. The resolver
  *     has two methods: getName(object) and getPrototype(string).
  *
+ *
  * For example,
  *
  * var necromancer = new Resurrect({
@@ -136,10 +137,14 @@ Resurrect.prototype.Error.prototype.name = 'ResurrectError';
  * Resolves prototypes through the properties on an object and
  * constructor names.
  * @param {Object} scope
+ * @param {function} function that guess the constructor name. Takes
+ * 				two parameter, the object and the already default calculated
+ * 				name
  * @constructor
  */
-Resurrect.NamespaceResolver = function(scope) {
+Resurrect.NamespaceResolver = function(scope, constructorNamer) {
     this.scope = scope;
+    this.constructorNamer = constructorNamer;
 };
 
 /**
@@ -160,6 +165,7 @@ Resurrect.NamespaceResolver.prototype.getPrototype = function(name) {
 
 /**
  * Get the prototype name for an object, to be fetched later with getPrototype.
+ * If no name is found, constructorNamer function if defined is used.
  * @param {Object} object
  * @returns {?string} Null if the constructor is Object.
  * @method
@@ -169,6 +175,10 @@ Resurrect.NamespaceResolver.prototype.getName = function(object) {
     if (constructor == null) { // IE
         var funcPattern = /^\s*function\s*([A-Za-z0-9_$]*)/;
         constructor = funcPattern.exec(object.constructor)[1];
+    }
+    
+    if (this.constructorNamer) {
+    	constructor = this.constructorNamer (object, constructor);
     }
 
     if (constructor === '') {
@@ -517,7 +527,7 @@ Resurrect.prototype.resurrect = function(string) {
             }
         }
         /* Re-establish object references and construct atoms. */
-        for (i = 0; i < this.table.length; i++) {
+        for (var i = 0; i < this.table.length; i++) {
             var object = this.table[i];
             for (var key in object) {
                 if (object.hasOwnProperty(key)) {
