@@ -71,27 +71,12 @@ properties:
      are not stored in global variables. The resolver has two methods:
      getName(object) and getPrototype(string).
      
- * *propertiesFilter* (null): Function returning true when the property
-     should be serialized, false when doesn't. It allows to choose what
-     properties serialize or ignore depending on attribute value and name
-     and the element that contains it. The function is evaluated for every
-     attribute ant takes three parameters:
-
-   * property name or key
- 
-   * property value 
- 
-   * the root element that contains the property
-
 For example,
 
 ```javascript
 var necromancer = new Resurrect({
     prefix: '__#',
-    cleanup: true,
-    propertiesFilter: function(key, value, root) {
-						return key !== '_inherited';
-					}
+    cleanup: true
 });
 ```
 

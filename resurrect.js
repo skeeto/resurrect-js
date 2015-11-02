@@ -57,21 +57,12 @@
  *     constructors are not stored in global variables. The resolver
  *     has two methods: getName(object) and getPrototype(string).
  *
- * 	 propertiesFilter (null): Function returning true when the property
- *     should be serialized, false when doesn't. It allows to choose what
- *     properties serialize or ignore depending on attribute value and name
- *     and the element that contains it. The function is evaluated for every
- *     attribute ant takes three parameters: property name or key, property
- *     value and the root element that contains the property.
  *
  * For example,
  *
  * var necromancer = new Resurrect({
  *     prefix: '__#',
- *     cleanup: true,
- *     propertiesFilter:	function(key, value, root) {
- *								return key !== '_inherited';
- *							}
+ *     cleanup: true
  * });
  *
  * ## Caveats
@@ -389,7 +380,7 @@ Resurrect.prototype.visit = function(root, f, replacer) {
             root[this.refcode] = this.tag(copy);
             for (var key in root) {
                 var value = root[key];
-                if (root.hasOwnProperty(key) && (!this.propertiesFilter || this.propertiesFilter(key, value, root))) {
+                if (root.hasOwnProperty(key)) {
                     if (replacer && value !== undefined) {
                         // Call replacer like JSON.stringify's replacer
                         value = replacer.call(root, key, root[key]);
