@@ -136,9 +136,11 @@ Resurrect.prototype.Error.prototype.name = 'ResurrectError';
  * Resolves prototypes through the properties on an object and
  * constructor names.
  * @param {Object} scope
+ * @param {boolean} resolveMangled
  * @constructor
  */
-Resurrect.NamespaceResolver = function(scope) {
+Resurrect.NamespaceResolver = function(scope, resolveMangled) {
+    this.resolveMangled = resolveMangled || false;
     this.scope = scope;
 };
 
@@ -177,6 +179,13 @@ Resurrect.NamespaceResolver.prototype.getName = function(object) {
     } else if (constructor === 'Object' || constructor === 'Array') {
         return null;
     } else {
+        if (this.resolveMangled) {
+            for (var prop in this.scope) {
+                if (this.scope.hasOwnProperty(prop) && this.scope[prop] === object.constructor) {
+                    return prop;
+                }
+            }
+        }
         return constructor;
     }
 };
