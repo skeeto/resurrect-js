@@ -1,0 +1,23 @@
+{
+  "name": "resurrect.js",
+  "version": "1.0.3",
+  "description": "ResurrectJS preserves object behavior (prototypes) and reference circularity with a special JSON encoding.",
+  "main": "resurrect.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lwdgit/resurrect-js.git"
+  },
+  "keywords": [
+    "json",
+    "resurect"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lwdgit/resurrect-js/issues"
+  },
+  "homepage": "https://github.com/lwdgit/resurrect-js#readme"
+}
