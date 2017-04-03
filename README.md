@@ -1,4 +1,4 @@
-# ResurrectJS
+# [ResurrectJS](https://www.npmjs.com/package/resurrect.js)
 
 ResurrectJS preserves object behavior (prototypes) and reference
 circularity with a special JSON encoding. Unlike flat JSON, it can
