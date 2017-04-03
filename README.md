@@ -9,6 +9,7 @@ also properly resurrect these types of values:
  * DOM objects
  * `undefined`
  * NaN, Infinity, -Infinity
+ * Function, Class
 
 Supported Browsers:
 
