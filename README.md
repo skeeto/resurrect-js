@@ -23,14 +23,8 @@ Read about [how it works](http://nullprogram.com/blog/2013/03/28/).
 ## Examples
 
 ```javascript
-function Foo() {}
-Foo.prototype.greet = function() { return "hello"; };
-
-// Behavior is preserved:
+function foo() {}
 var necromancer = new Resurrect();
-var json = necromancer.stringify(new Foo());
-var foo = necromancer.resurrect(json);
-foo.greet();  // => "hello"
 
 // References to the same object are preserved:
 json = necromancer.stringify([foo, foo]);
