@@ -24,14 +24,15 @@ Read about [how it works](http://nullprogram.com/blog/2013/03/28/).
 ## Examples
 
 ```javascript
-function foo() {}
+function foo() {
+   return 1;
+}
 var necromancer = new Resurrect();
 
 // References to the same object are preserved:
 json = necromancer.stringify([foo, foo]);
 var array = necromancer.resurrect(json);
-array[0] === array[1];  // => true
-array[1].greet();  // => "hello"
+array[0]() === array[1]();  // => true
 
 // Dates are restored properly
 json = necromancer.stringify(new Date());
