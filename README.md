@@ -1,4 +1,4 @@
-# ResurrectJS
+# [ResurrectJS](https://www.npmjs.com/package/resurrect.js)
 
 ResurrectJS preserves object behavior (prototypes) and reference
 circularity with a special JSON encoding. Unlike flat JSON, it can
@@ -9,6 +9,7 @@ also properly resurrect these types of values:
  * DOM objects
  * `undefined`
  * NaN, Infinity, -Infinity
+ * Function, Class
 
 Supported Browsers:
 
@@ -23,20 +24,15 @@ Read about [how it works](http://nullprogram.com/blog/2013/03/28/).
 ## Examples
 
 ```javascript
-function Foo() {}
-Foo.prototype.greet = function() { return "hello"; };
-
-// Behavior is preserved:
+function foo() {
+   return 1;
+}
 var necromancer = new Resurrect();
-var json = necromancer.stringify(new Foo());
-var foo = necromancer.resurrect(json);
-foo.greet();  // => "hello"
 
 // References to the same object are preserved:
 json = necromancer.stringify([foo, foo]);
 var array = necromancer.resurrect(json);
-array[0] === array[1];  // => true
-array[1].greet();  // => "hello"
+array[0]() === array[1]();  // => true
 
 // Dates are restored properly
 json = necromancer.stringify(new Date());
